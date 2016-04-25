@@ -1,4 +1,6 @@
-== What?
+# qcheck
+
+## What?
 
 qcheck is a utility that takes a qcow2 file as input and attempts to validate
 the header, metadata, and all data pointers for simple errors and problems like
@@ -21,7 +23,7 @@ VMState data. It probably has a lot of bugs regarding the handling and
 analysis of the differences between V2/V3 qcow2 files. It was designed with
 V3 images in particular in mind.
 
-== Usage
+## Usage
 
 ./qcheck [opts] <qcow2_file>
 
@@ -66,7 +68,7 @@ All filters are additive and will combine with presets.
         'U': Dump unallocated rangeset
         'E': Dump entire rangeset
 
-== License
+## License
 
 This project makes use of Linux internals (the Red-Black trees) so by extension,
 this project is GPLv2. It is also based off of the QEMU qcow2 specification,
@@ -75,7 +77,7 @@ which is also GPLv2.
 If there is a licensing issue with the way I have released this project, or you
 wish to borrow components isolated from the RBTree module, please contact me.
 
-== Bugs, Contributions, Feedback
+## Bugs, Contributions, Feedback
 
 - Feel free to use the github issue tracker.
 - Please also feel free to send pull requests via github.
