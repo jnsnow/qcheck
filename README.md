@@ -25,26 +25,33 @@ V3 images in particular in mind.
 
 ## Usage
 
-./qcheck [opts] <qcow2_file>
+`./qcheck [opts] <qcow2_file>`
 
 Additional logging presets and filters can be used:
 
 Logging presets: these are all mutually exclusive, except for debug.
-        -s --silent: No output whatsoever.
-        -q --quiet: Fatal and nonfatal qcheck errors. (--log fw)
-        -b --basic: Basic analysis and summaries. This is the default.
-                        (--log fwshiHLR)
+<pre>
+        -s --silent:  No output whatsoever.
+        -q --quiet:   Fatal and nonfatal qcheck errors. (--log fw)
+        -b --basic:   Basic analysis and summaries. This is the default.
+                      (--log fwshiHLR)
         -v --verbose: Detailed problem analysis. (--log fwshiHLRpc)
-        -x --deluge: Everything except debug output.
-        -d --debug: The same as `--log d`.
-                `--deluge --debug` or `-xd` enables all output.
+        -x --deluge:  Everything except debug output.
+        -d --debug:   The same as `--log d`.
+                      `--deluge --debug` or `-xd` enables all output.
+</pre>
 
--l [...] --log=[...]: detailed logging filters. Specify individual
-output streams.
-All filters are additive and will combine with presets.
--e [...] --exclude=[...]: exclude these filters.
-        Will subtract filters from presets.
+`-l [...] --log=[...]`: detailed logging filters. Specify individual
+                        output streams.
+                        All filters are additive and will combine with presets.
+                        e.g. `--log=fwshi`
 
+`-e [...] --exclude=[...]`: exclude these filters.
+                            Will subtract filters from presets.
+                            e.g. `--basic --exclude=LHR`
+
+The available filters for inclusion/exclusion are:
+<pre>
         'f': Fatal errors
         'w': Nonfatal errors
         's': Analysis summaries
@@ -67,6 +74,7 @@ All filters are additive and will combine with presets.
         'A': Dump allocated rangeset
         'U': Dump unallocated rangeset
         'E': Dump entire rangeset
+</pre>
 
 ## License
 
