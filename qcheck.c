@@ -10,6 +10,7 @@
 #include <sys/param.h>
 #include <assert.h>
 #include <getopt.h>
+#include <time.h>
 
 #include "range.h"
 
@@ -26,6 +27,7 @@ typedef enum message_type {
     M_ERROR = M_RANGE_BEGIN,      /* Fatal error messages */
     M_WARN,       /* Nonfatal warnings, distinct from analysis problems */
     M_SUMMARY,    /* Analysis summaries */
+    M_HELLO,      /* Bootup logging message(s) */
     M_HEADERS,    /* Headers, Progress */
     M_INFO,       /* Misc. output */
     M_PROBLEMS,   /* All problems found, one-by-one */
@@ -57,6 +59,7 @@ struct {
     [M_ERROR] =       { "Fatal errors",                            'f' },
     [M_WARN] =        { "Nonfatal errors",                         'w' },
     [M_SUMMARY] =     { "Analysis summaries",                      's' },
+    [M_HELLO] =       { "Bootup log message",                      'e' },
     [M_HEADERS] =     { "Section headers",                         'h' },
     [M_INFO] =        { "Info / misc.",                            'i' },
     [M_PROBLEMS] =    { "Detailed problems reports",               'p' },
@@ -86,7 +89,7 @@ struct {
 #define LOG_QUIET (LMASK(M_ERROR) | LMASK(M_WARN))
 #define LOG_BASIC (LOG_QUIET | LMASK(M_SUMMARY) | LMASK(M_HEADERS) |    \
                    LMASK(M_INFO) | LMASK(M_HEADER_DATA) | LMASK(M_L1_TABLE) | \
-                   LMASK(M_REFTABLE))
+                   LMASK(M_REFTABLE) | LMASK(M_HELLO))
 #define LOG_VERBOSE (LOG_BASIC | LMASK(M_PROBLEMS) | LMASK(M_POSITIVE))
 #define LOG_DELUGE (-1UL & ~LMASK(M_DEBUG))
 
@@ -111,6 +114,22 @@ static __attribute__((format(printf, 2, 3)))
 void mprintf(enum message_type mtype, const char *fmt, ...)
 {
     va_list va;
+
+    va_start(va, fmt);
+    mvprintf(mtype, fmt, va);
+    va_end(va);
+}
+
+static __attribute__((format(printf, 2, 3)))
+void lprintf(enum message_type mtype, const char *fmt, ...)
+{
+    va_list va;
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char ts[20];
+
+    strftime(ts, sizeof(ts), "%F %T", tm);
+    mprintf(mtype, "[%s] ", ts);
 
     va_start(va, fmt);
     mvprintf(mtype, fmt, va);
@@ -1742,6 +1761,9 @@ int main(int argc, char *argv[]) {
         msg_warn("Warning: More than one filename given.\n"
                  "Ignoring '%s' onward.\n", argv[optind + 1]);
     }
+
+    lprintf(M_HELLO, "%s analyzing '%s' for corruption\n",
+            argv[0], argv[optind]);
 
     qf = new_qfile(argv[optind]);
     if (!qf) {
