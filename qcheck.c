@@ -1748,7 +1748,6 @@ int main(int argc, char *argv[]) {
         case '?':
         default:
             msg_error("Unrecognized argument: %s\n", argv[optind - 1]);
-            rc = -EINVAL;
             goto efail;
             break;
         }
