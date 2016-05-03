@@ -102,12 +102,14 @@ unsigned long mtype_stderr = SMASK;
 unsigned long mtype_stdout = -1UL & ~SMASK;
 unsigned long mlevel = LOG_BASIC;
 
+#define STREAM_ON(mtype) ((LMASK(mtype) & mlevel) == LMASK(mtype))
+#define STREAM_OFF(mtype) ((LMASK(mtype) & mlevel) == 0)
+
 void mvprintf(enum message_type mtype, const char *fmt, va_list va)
 {
-    if ((mlevel & LMASK(mtype)) == 0) {
-        return;
+    if (STREAM_ON(mtype)) {
+        vfprintf(MSTREAM(mtype), fmt, va);
     }
-    vfprintf(MSTREAM(mtype), fmt, va);
 }
 
 static __attribute__((format(printf, 2, 3)))
@@ -482,7 +484,7 @@ void print_rangeset(qfile *qf, const char *title, int typemask,
 {
     struct filter *cfg;
 
-    if (!qf || !qf->all || (mlevel & LMASK(msg_type)) == 0) {
+    if (!qf || !qf->all || STREAM_OFF(msg_type)) {
         return;
     }
 
@@ -1033,7 +1035,7 @@ int analyze_refcount_table(qfile *qf)
 
         /* If we have errors but aren't printing the table, make sure we print
          * the entry as a Problem, at least. */
-        if (errors && !(mlevel & M_REFTABLE)) {
+        if (errors && STREAM_OFF(M_REFTABLE)) {
             table_msg_type = M_PROBLEMS;
         } else {
             table_msg_type = M_REFTABLE;
@@ -1133,7 +1135,7 @@ int analyze_refcount_block(qfile *qf, int entry,
             refblock_msg_type = M_REFBLOCK_2;
         }
 
-        if (eof && !(mlevel & refblock_msg_type)) {
+        if (eof && STREAM_OFF(refblock_msg_type)) {
             refblock_msg_type = M_PROBLEMS;
         }
 
@@ -1321,7 +1323,7 @@ int analyze_l1_table(qfile *qf)
 
         /* If there are errors and we are not printing the table, print this
          * entry in the table as an error for reference. */
-        msg_type = (errors && !(mlevel & M_L1_TABLE)) ? M_PROBLEMS : M_L1_TABLE;
+        msg_type = (errors && STREAM_OFF(M_L1_TABLE)) ? M_PROBLEMS : M_L1_TABLE;
 
         mprintf(msg_type, "0x%02x: 0x%016"PRIx64" offset 0x%016"PRIx64"; "
                 "cluster idx 0x%"PRIx64"\n",
@@ -1463,7 +1465,7 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
         errors |= (copied && (refcnt != 1)) ? (1 << L2_EXTRA_COPIED) : 0;
         errors |= (!copied && (refcnt == 0)) ? (1 << L2_MISSING_COPIED) : 0;
 
-        msg_type = (errors && !(mlevel & M_L2_TABLE)) ? M_PROBLEMS : M_L2_TABLE;
+        msg_type = (errors && STREAM_OFF(M_L2_TABLE)) ? M_PROBLEMS : M_L2_TABLE;
 
         if (!errors) {
             rc = add_host_cluster(qf, l2_ptr, RANGE_TYPE_DATA, NULL);
