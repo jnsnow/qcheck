@@ -1460,16 +1460,17 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
             /* l2_ptr is a bit different for compressed pointers: */
             l2_ptr = l2_ent & 0x3fffffffffffffff;
             l2_ptr &= ((1ULL << shift) - 1);
+            /* FIXME: The sector length as presented is a LOWER BOUND,
+             *        and the +1 may not always actually be appropriate. */
             nsect = ((l2_ent >> shift) & csize_mask) + 1;
             len = nsect * 512;
-            align = 512;
         } else {
             zeroes = !!(l2_ent & 0x01);
             errors |= (l2_ent & 0x3f00000000000000) ? (1 << L2_RESERVED) : 0;
+            errors |= (l2_ptr % qf->cluster_size) ? (1 << L2_MISALIGNED) : 0;
         }
 
         /* errors */
-        errors |= (l2_ptr % align) ? (1 << L2_MISALIGNED) : 0;
         if (l2_ptr + len > qf->file_size) {
             errors |= (1 << L2_OUT_OF_BOUNDS);
             refcnt = 0;
@@ -1484,10 +1485,16 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
         /* FIXME: Is this last one appropriate for compressed clusters? */
         errors |= (!copied && (refcnt == 0)) ? (1 << L2_MISSING_COPIED) : 0;
 
+        if (compressed && !errors) {
+            mprintf(M_DEBUG, "COMPRESSED PTR W/O ERRORS: 0x%016lx LEN: %ld\n",
+                    l2_ent, len);
+        }
+
         msg_type = (errors && STREAM_OFF(M_L2_TABLE)) ? M_PROBLEMS : M_L2_TABLE;
 
         if (!errors) {
-            rc = add_host_cluster(qf, l2_ptr, RANGE_TYPE_DATA, NULL);
+            rc = add_host_range(qf, l2_ptr, ROUND_UP(len, qf->cluster_size),
+                                RANGE_TYPE_DATA, NULL);
             CHECK_RC(rc, ret, error);
             rc = qref_bump(qf, l2_ptr);
             CHECK_RC(rc, ret, error);
