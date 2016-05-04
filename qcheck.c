@@ -1396,6 +1396,7 @@ enum L2_ERRORS {
     L2_CONFLICT,
     L2_EXTRA_COPIED,
     L2_MISSING_COPIED,
+    L2_TOO_LONG,
     L2_MAX
 };
 
@@ -1410,6 +1411,7 @@ const char *l2_errors[L2_MAX] = {
     [L2_CONFLICT] = "has both compressed and copied bits set",
     [L2_EXTRA_COPIED] = "has more than one reference, but copy bit is set",
     [L2_MISSING_COPIED] = "has only one reference, but copy bit is empty",
+    [L2_TOO_LONG] = "has a compressed size greater than one cluster",
 };
 
 /**
@@ -1440,7 +1442,6 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
         /* features of interest */
         char compressed, copied, zeroes = 0;
         uint64_t len = qf->cluster_size;
-        int align = qf->cluster_size;
 
         if (!l2_ent) {
             continue;
@@ -1453,37 +1454,35 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
         copied = !!(l2_ent & 0x8000000000000000);
 
         if (compressed) {
-            int nsect;
             int shift = 62 - (qf->header->cluster_bits - 8);
             int csize_mask = (1 << (qf->header->cluster_bits - 8)) - 1;
 
             /* l2_ptr is a bit different for compressed pointers: */
             l2_ptr = l2_ent & 0x3fffffffffffffff;
             l2_ptr &= ((1ULL << shift) - 1);
-            /* FIXME: The sector length as presented is a LOWER BOUND,
+            /* FIXME: The sector length as presented is a lower bound,
              *        and the +1 may not always actually be appropriate. */
-            nsect = ((l2_ent >> shift) & csize_mask) + 1;
-            len = nsect * 512;
+            len = (((l2_ent >> shift) & csize_mask) + 1) << 9;
+            errors |= (len > qf->cluster_size) ? (1 << L2_TOO_LONG) : 0;
         } else {
             zeroes = !!(l2_ent & 0x01);
             errors |= (l2_ent & 0x3f00000000000000) ? (1 << L2_RESERVED) : 0;
             errors |= (l2_ptr % qf->cluster_size) ? (1 << L2_MISALIGNED) : 0;
         }
 
-        /* errors */
         if (l2_ptr + len > qf->file_size) {
             errors |= (1 << L2_OUT_OF_BOUNDS);
             refcnt = 0;
         } else {
-            /* FIXME: This is probably not correct for compressed clusters. */
             refcnt = qf->ref_file[l2_ptr / qf->cluster_size];
+        }
+        if (!compressed) {
+            errors |= (copied && (refcnt != 1)) ? (1 << L2_EXTRA_COPIED) : 0;
+            errors |= (!copied && (refcnt == 0)) ? (1 << L2_MISSING_COPIED) : 0;
         }
         errors |= (overlap(qf, l2_ptr, len)) ? (1 << L2_OVERLAP) : 0;
         errors |= ((l2_ptr == 0) && (l2_ent != 0)) ? (1 << L2_EMPTY_FLAGS) : 0;
         errors |= (copied && compressed) ? (1 << L2_CONFLICT) : 0;
-        errors |= (copied && (refcnt != 1)) ? (1 << L2_EXTRA_COPIED) : 0;
-        /* FIXME: Is this last one appropriate for compressed clusters? */
-        errors |= (!copied && (refcnt == 0)) ? (1 << L2_MISSING_COPIED) : 0;
 
         if (compressed && !errors) {
             mprintf(M_DEBUG, "COMPRESSED PTR W/O ERRORS: 0x%016lx LEN: %ld\n",
@@ -1493,10 +1492,10 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
         msg_type = (errors && STREAM_OFF(M_L2_TABLE)) ? M_PROBLEMS : M_L2_TABLE;
 
         if (!errors) {
-            rc = add_host_range(qf, l2_ptr, ROUND_UP(len, qf->cluster_size),
-                                RANGE_TYPE_DATA, NULL);
+            rc = add_host_range(qf, l2_ptr,
+                                len, RANGE_TYPE_DATA, NULL);
             CHECK_RC(rc, ret, error);
-            rc = qref_bump(qf, l2_ptr);
+            rc = qref_bump(qf, l2_ptr & ~((1 << qf->header->cluster_bits) - 1));
             CHECK_RC(rc, ret, error);
             continue;
         } else {
