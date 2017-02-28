@@ -30,10 +30,10 @@ int add_range(rangeset *rset, uint64_t offset,
 void fprint_ranges(FILE *stream, rangeset *rset);
 void print_ranges(rangeset *rset);
 int range_traversal(rangeset *rset, enum traversal order,
-                     int (*fn)(range *node, void *opaque), void *opaque);
+                     int (*fn)(const range *node, void *opaque), void *opaque);
 int range_traversal_filter(rangeset *rset, enum traversal order,
                            mask_t typemask,
-                           int (*fn)(range *node, void *opaque), void *opaque);
+                           int (*fn)(const range *node, void *opaque), void *opaque);
 uint64_t get_size(rangeset *rset);
 uint64_t get_type_size(rangeset *rset, unsigned type_index);
 int range_overlap(rangeset *rset, uint64_t offset,

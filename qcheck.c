@@ -422,7 +422,7 @@ struct filter {
  * @opaque: Callback information; a pointer to `struct filter` in this case.
  * @return: 0.
  */
-int print_range(range *r, void *opaque)
+int print_range(const range *r, void *opaque)
 {
     struct filter *cfg = (struct filter *)opaque;
     int i;

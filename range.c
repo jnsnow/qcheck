@@ -312,7 +312,7 @@ void print_ranges(rangeset *rset)
 }
 
 static int _range_traversal(rnode *node, enum traversal order, mask_t typemask,
-                            int (*fn)(range *range, void *opaque), void *opaque)
+                            int (*fn)(const range *range, void *opaque), void *opaque)
 {
     int rc;
 
@@ -340,7 +340,7 @@ static int _range_traversal(rnode *node, enum traversal order, mask_t typemask,
 
 int range_traversal_filter(rangeset *rset, enum traversal order,
                             mask_t typemask,
-                           int (*fn)(range *node, void *opaque), void *opaque)
+                           int (*fn)(const range *node, void *opaque), void *opaque)
 {
     rangeset_t *rs = (rangeset_t *)rset;
     return _range_traversal((rnode *)rs->tree.rb_node, order,
@@ -348,7 +348,7 @@ int range_traversal_filter(rangeset *rset, enum traversal order,
 }
 
 int range_traversal(rangeset *rset, enum traversal order,
-                     int (*fn)(range *node, void *opaque), void *opaque)
+                     int (*fn)(const range *node, void *opaque), void *opaque)
 {
     return range_traversal_filter(rset, order, (mask_t)-1, fn, opaque);
 }
