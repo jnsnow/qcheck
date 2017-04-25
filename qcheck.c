@@ -555,6 +555,20 @@ void qref_dump(qfile *qf)
         }                                       \
     } while(0)
 
+/* sigh */
+size_t fread_errno(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+    size_t rc = fread(ptr, size, nmemb, stream);
+    if (rc != nmemb) {
+        if (feof(stream)) {
+            errno = EOF;
+        } else {
+            errno = EIO;
+        }
+    }
+    clearerr(stream);
+    return rc;
+}
 
 /******************************************************************************/
 /*                        Header Parsing & Analysis                           */
@@ -584,10 +598,9 @@ int parse_header_v3(qfile *qf)
         return rc;
     }
 
-    rc = fread(&buff->incompatible_features,
-               sizeof(struct qheader3) - sizeof(struct qheader),
-               1,
-               qf->fh);
+    rc = fread_errno(&buff->incompatible_features,
+                     sizeof(struct qheader3) - sizeof(struct qheader),
+                     1, qf->fh);
     if (rc != 1) {
         rc = -errno;
         perrorf("Couldn't read qcow2v3 header");
@@ -629,7 +642,7 @@ int parse_header(qfile *qf)
         goto out;
     }
 
-    rc = fread(qf->header, sizeof(struct qheader), 1, qf->fh);
+    rc = fread_errno(qf->header, sizeof(struct qheader), 1, qf->fh);
     if (rc != 1) {
         rc = -errno;
         perrorf("Could not read QCOW2 header block");
@@ -949,8 +962,8 @@ int parse_refcount_table(qfile *qf)
         return rc;
     }
 
-    rc = fread(qf->refcount_table, sizeof(*qf->refcount_table),
-               qf->refcount_table_size, qf->fh);
+    rc = fread_errno(qf->refcount_table, sizeof(*qf->refcount_table),
+                     qf->refcount_table_size, qf->fh);
     if (rc != qf->refcount_table_size) {
         rc = -errno;
         perrorf("Couldn't read refcount table");
@@ -1089,7 +1102,8 @@ int buffer_refcount_block(qfile *qf, int entry, uint16_t *refblock)
         return rc;
     }
 
-    rc = fread(refblock, sizeof(*refblock), qf->refcount_block_entries, qf->fh);
+    rc = fread_errno(refblock, sizeof(*refblock),
+                     qf->refcount_block_entries, qf->fh);
     if (rc != qf->refcount_block_entries) {
         rc = -errno;
         perrorf("Couldn't read reference block");
@@ -1265,7 +1279,7 @@ int parse_l1_table(qfile *qf)
         return rc;
     }
 
-    rc = fread(qf->l1_table, sizeof(l1_entry), header->l1_size, qf->fh);
+    rc = fread_errno(qf->l1_table, sizeof(l1_entry), header->l1_size, qf->fh);
     if (rc != header->l1_size) {
         rc = -errno;
         perrorf("Failed to read L1 table");
@@ -1376,7 +1390,7 @@ int buffer_l2_cluster(qfile *qf, uint64_t ptr, l2_entry *l2_cache)
         return rc;
     }
 
-    rc = fread(l2_cache, sizeof(l2_entry), qf->num_l2_entries, qf->fh);
+    rc = fread_errno(l2_cache, sizeof(l2_entry), qf->num_l2_entries, qf->fh);
     if (rc != qf->num_l2_entries) {
         rc = -errno;
         perrorf("Couldn't read L2 block");
