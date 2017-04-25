@@ -1865,7 +1865,7 @@ int main(int argc, char *argv[]) {
     print_rangeset(qf, "File Map", -1, 1, 0, M_RANGE_ALL);
 
     /* Print cluster counts */
-    if ((mlevel & LMASK(M_SUMMARY))) {
+    if (STREAM_ON(M_SUMMARY)) {
         h1("Cluster Counts");
         for (i = RANGE_TYPE_BEGIN; i < RANGE_TYPE_MAX; i++) {
             mprintf(M_SUMMARY, "%s: 0x%"PRIx64"\n", rtype_lookup[i],
