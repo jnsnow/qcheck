@@ -560,11 +560,8 @@ size_t fread_errno(void *ptr, size_t size, size_t nmemb, FILE *stream)
 {
     size_t rc = fread(ptr, size, nmemb, stream);
     if (rc != nmemb) {
-        if (feof(stream)) {
-            errno = EOF;
-        } else {
-            errno = EIO;
-        }
+        /* Treat EOF as an error; we can't get the data we want. */
+        errno = EIO;
     }
     clearerr(stream);
     return rc;
@@ -1222,6 +1219,7 @@ int parse_and_analyze_refcount_blocks(struct qfile *qf)
     free(refblock);
     if (rc) {
         free(qf->ref_file);
+        qf->ref_file = NULL;
     }
     return rc ? rc : ret;
 }
