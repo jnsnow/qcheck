@@ -690,6 +690,7 @@ int parse_header(qfile *qf)
     return 0;
  error:
     free(qf->header);
+    qf->header = NULL;
  out:
     return rc;
 }
