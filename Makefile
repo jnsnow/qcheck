@@ -1,8 +1,8 @@
 CFLAGS=-Wall -O2
 
 all: qcheck
-debug: CFLAGS += -ggdb -O0
-debug: LDFLAGS += -ggdb -O0
+debug: CFLAGS += -ggdb -O0 -fsanitize=undefined
+debug: LDFLAGS += -ggdb -O0 -lubsan
 debug: qcheck
 
 qcheck: qcheck.o rbtree.o range.o pool.o
