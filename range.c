@@ -269,13 +269,6 @@ int add_range(rangeset *rset, uint64_t offset, uint64_t len, mask_t typemask,
     if (!tmp) {
         return -ENOMEM;
     }
-    if (tmp->range.end & 0xffff) {
-        fprintf(stderr, "\n\nWARNING: range added has a bizarre endpoint\n\n");
-        fprintf(stderr, "[0x%"PRIx64", 0x%"PRIx64")\n", tmp->range.offset,
-                tmp->range.end);
-        fprintf(stderr, "given offset:0x%"PRIx64", len:0x%"PRIx64", typemask:%x\n",
-                offset, len, typemask);
-    }
     rb_link_node(&tmp->node, parent, new);
     rb_insert_color(&tmp->node, root);
  out:
