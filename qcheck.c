@@ -1510,7 +1510,6 @@ int analyze_l2_cluster(qfile *qf, int l1_index, l2_entry *l2_cache)
             CHECK_RC(rc, ret, error);
             rc = qref_bump(qf, l2_ptr & ~((1 << qf->header->cluster_bits) - 1));
             CHECK_RC(rc, ret, error);
-            continue;
         } else {
             cr++;
         }
