@@ -1765,9 +1765,9 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "\t-q --quiet: Fatal and nonfatal qcheck errors."
                     " (--log fw)\n");
             fprintf(stderr, "\t-b --basic: Basic analysis and summaries."
-                    " This is the default. (--log fwshiHLR)\n");
+                    " This is the default. (--log fwsehiHLR)\n");
             fprintf(stderr, "\t-v --verbose: Detailed problem analysis."
-                    " (--log fwshiHLRpc)\n");
+                    " (--log fwsehiHLRpc)\n");
             fprintf(stderr, "\t-x --deluge: Everything except debug output.\n");
             fprintf(stderr, "\t-d --debug: The same as `--log d`."
                     " `--deluge --debug` or `-xd` enables all output.\n");
@@ -1776,7 +1776,7 @@ int main(int argc, char *argv[]) {
                     " Specify individual output streams.\n");
             fprintf(stderr, "All filters are additive and "
                     "will combine with presets.\n");
-            fprintf(stderr, "-e [...] --exclude=[...]: exclude these filters."
+            fprintf(stderr, "-e [...] --exclude=[...]: exclude these filters. "
                     "Will subtract filters from presets.\n");
             for (i = 0; i < M_RANGE_END; i++) {
                 fprintf(stderr, "\t'%c': %s\n",
